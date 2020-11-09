@@ -1,5 +1,6 @@
 <?php
 
+namespace VtAir;
 // Wraper for veritrans weblink type payment
 require_once 'lib/Pest.php';
 require_once 'lib/hash_generator.php';
@@ -7,17 +8,17 @@ require_once 'veritrans_notification.php';
 
 class Veritrans
 {
-  
+
   const REQUEST_KEY_URL = 'https://payments.veritrans.co.id/web1/commodityRegist.action';
   const PAYMENT_REDIRECT_URL = 'https://payments.veritrans.co.id/web1/paymentStart.action';
 
   // Ignore these lines, its a dev server
   // const REQUEST_KEY_URL = 'http://192.168.10.250/web1/commodityRegist.action';
   // const PAYMENT_REDIRECT_URL = 'http://192.168.10.250/web1/paymentStart.action';
-  
-  
+
+
   // Required Params
-  private $settlement_type = '01'; // 00:payment type not set, 01:credit card settlement 
+  private $settlement_type = '01'; // 00:payment type not set, 01:credit card settlement
   private $merchant_id;
   private $order_id;
   private $session_id;
@@ -37,7 +38,7 @@ class Veritrans
   private $postal_code;
   private $email;
   private $phone;
-  
+
   private $shipping_flag;
   private $required_shipping_address;
   private $shipping_specification_flag;
@@ -50,19 +51,19 @@ class Veritrans
   private $shipping_postal_code;
   private $shipping_phone;
   private $shipping_method;
- 
+
   private $card_no;
   private $card_exp_date; // mm/yy/format
   private $card_holder_name;
   private $card_number_of_installment;
-  
+
   private $lang_enable_flag;
   private $lang;
-  
+
   private $finish_payment_return_url;
   private $unfinish_payment_return_url;
   private $error_payment_return_url;
-  
+
   // Sample of array of commodity
   // array(
   //           array("COMMODITY_ID" => "123", "COMMODITY_UNIT" => "1", "COMMODITY_NUM" => "1", "COMMODITY_NAME1" => "BUKU", "COMMODITY_NAME2" => "BOOK"),
@@ -70,7 +71,7 @@ class Veritrans
   //       )
   private $commodity;
 
-  public function __get($property) 
+  public function __get($property)
   {
     if (property_exists($this, $property))
     {
@@ -78,12 +79,12 @@ class Veritrans
     }
   }
 
-  public function __set($property, $value) 
+  public function __set($property, $value)
   {
-    if (property_exists($this, $property)) 
+    if (property_exists($this, $property))
     {
       $alias_attributes = $this->alias_attributes();
-      
+
       if(array_key_exists($property, $alias_attributes))
       {
         // set the corresponding attribute
@@ -99,21 +100,21 @@ class Veritrans
           $this->$deprecated_attributes[$property] = $value;
         }
         $this->$property = $value;
-       
+
       }
-        
+
     }
 
     return $this;
   }
 
-  function __construct($params = null) 
+  function __construct($params = null)
   {
 
   }
 
   public function get_keys()
-  {    
+  {
     // Generate merchant hash code
     $hash = HashGenerator::generate($this->merchant_id, $this->merchant_hash, $this->settlement_type, $this->order_id, $this->gross_amount);
 
@@ -124,13 +125,13 @@ class Veritrans
       'MERCHANT_ID'                 => $this->merchant_id,
       'ORDER_ID'                    => $this->order_id,
       'SESSION_ID'                  => $this->session_id,
-      'GROSS_AMOUNT'                => $this->gross_amount,                   
-      'PREVIOUS_CUSTOMER_FLAG'      => $this->previous_customer_flag,         
-      'CUSTOMER_STATUS'             => $this->customer_status,                
+      'GROSS_AMOUNT'                => $this->gross_amount,
+      'PREVIOUS_CUSTOMER_FLAG'      => $this->previous_customer_flag,
+      'CUSTOMER_STATUS'             => $this->customer_status,
       'MERCHANTHASH'                => $hash,
-      
-      'CUSTOMER_SPECIFICATION_FLAG' => $this->billing_address_different_with_shipping_address,   
-      'EMAIL'                       => $this->email, 
+
+      'CUSTOMER_SPECIFICATION_FLAG' => $this->billing_address_different_with_shipping_address,
+      'EMAIL'                       => $this->email,
       'FIRST_NAME'                  => $this->first_name,
       'LAST_NAME'                   => $this->last_name,
       'POSTAL_CODE'                 => $this->postal_code,
@@ -139,7 +140,7 @@ class Veritrans
       'CITY'                        => $this->city,
       'COUNTRY_CODE'                => $this->country_code,
       'PHONE'                       => $this->phone,
-      'SHIPPING_FLAG'               => $this->required_shipping_address,                 
+      'SHIPPING_FLAG'               => $this->required_shipping_address,
       'SHIPPING_FIRST_NAME'         => $this->shipping_first_name,
       'SHIPPING_LAST_NAME'          => $this->shipping_last_name,
       'SHIPPING_ADDRESS1'           => $this->shipping_address1,
@@ -160,12 +161,12 @@ class Veritrans
 
     // data query string only without commodity
     $query_string = http_build_query($data);
-        
+
     if(isset($this->commodity)){
       $commodity_query_string = $this->build_commodity_query_string($this->commodity);
       $query_string = "$query_string&$commodity_query_string";
     }
-    		
+
     $client = new Pest(self::REQUEST_KEY_URL);
     $result = $client->post('', $query_string);
 
@@ -173,7 +174,7 @@ class Veritrans
 
     return $key;
   }
-  
+
   // Private methods
   // return array of commodities
   private function build_commodity_query_string($commodity)
@@ -182,15 +183,15 @@ class Veritrans
   	$query_string = "";
   	foreach ($commodity as $row) {
         $row = $this->replace_commodity_params_with_legacy_params($row);
-  	    
+
         $q = http_build_query($row);
-        if(!($query_string=="")) 
+        if(!($query_string==""))
           $query_string = $query_string . "&";
         $query_string = $query_string . $q;
         $line = $line + 1;
   	};
   	$query_string = $query_string . "&REPEAT_LINE=" . $line;
-  	
+
   	return $query_string;
   }
 
@@ -198,7 +199,7 @@ class Veritrans
   // return array of keys or error
   private function extract_keys_from($body)
   {
-    
+
     $key = array();
     $body_lines = explode("\n", $body);
     foreach($body_lines as $line) {
@@ -213,21 +214,21 @@ class Veritrans
     return $key;
 
    }
-   
+
    private function alias_attributes()
    {
     $alias = array( 'billing_address_different_with_shipping_address' => 'customer_specification_flag',
                     'required_shipping_address' => 'shipping_flag');
     return $alias;
    }
-   
+
    private function deprecated_attributes()
    {
      $alias_attributes = $this->alias_attributes();
      $deprecated_attributes = array_flip($alias_attributes);
      return $deprecated_attributes;
    }
-   
+
    private function replace_commodity_params_with_legacy_params($commodity)
    {
      if(array_key_exists("COMMODITY_QTY", $commodity) && $commodity["COMMODITY_QTY"] != '' )
@@ -240,7 +241,7 @@ class Veritrans
        $commodity["COMMODITY_UNIT"] = $commodity["COMMODITY_PRICE"];
        unset($commodity["COMMODITY_PRICE"]);
      }
-     
+
      return $commodity;
    }
 
