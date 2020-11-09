@@ -1,0 +1,12 @@
+{
+    "name": "kksigma/veritrans-air-web",
+    "description": "veritrans air-web api",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kksigma",
+            "email": "kksigma8@gmail.com"
+        }
+    ],
+    "require": {}
+}
