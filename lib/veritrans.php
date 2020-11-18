@@ -9,6 +9,7 @@ require_once 'veritrans_notification.php';
 class Veritrans
 {
 
+  const Test = 'just_test';
   const REQUEST_KEY_URL = 'https://payments.veritrans.co.id/web1/commodityRegist.action';
   const PAYMENT_REDIRECT_URL = 'https://payments.veritrans.co.id/web1/paymentStart.action';
 
